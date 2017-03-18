@@ -1,0 +1,311 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Easy 21</title>
+
+    <style>
+        table,
+        td,
+        tr,
+        th {
+            border: none!important
+        }
+
+        img {
+            border: 1px solid
+        }
+    </style>
+    <script type="text/javascript" src="q.json"></script>
+    <script type="text/javascript">
+        // Read python variable
+        var estimates = JSON.parse(data);
+        // console.log(estimates);
+
+        // bugs
+        // player hit -> reset -> bug
+        // On stick logic
+
+        var files = ['10_of_spades.png', '10_of_diamonds.png', '5_of_diamonds.png', '4_of_hearts.png', 'jack_of_clubs.png', '7_of_diamonds.png', '9_of_hearts.png', '8_of_diamonds.png', '7_of_hearts.png', 'queen_of_clubs.png', '10_of_clubs.png',
+            'jack_of_hearts.png', '2_of_spades.png', '9_of_clubs.png', '8_of_clubs.png', 'ace_of_spades.png', 'king_of_clubs.png', 'king_of_hearts.png', '6_of_hearts.png', 'jack_of_diamonds.png', '8_of_spades.png', 'king_of_spades.png',
+            'jack_of_spades.png', 'ace_of_hearts.png', '5_of_clubs.png', '3_of_diamonds.png', '4_of_diamonds.png', '10_of_hearts.png', '3_of_hearts.png', 'ace_of_clubs.png', '2_of_diamonds.png', '9_of_diamonds.png', '6_of_clubs.png',
+            'ace_of_diamonds.png', '5_of_hearts.png', '6_of_spades.png', '3_of_spades.png', 'king_of_diamonds.png', '2_of_clubs.png', 'queen_of_diamonds.png', '5_of_spades.png', '9_of_spades.png', 'queen_of_hearts.png', '2_of_hearts.png',
+            '4_of_spades.png', '7_of_spades.png', '4_of_clubs.png', 'queen_of_spades.png', '8_of_hearts.png', '3_of_clubs.png', '7_of_clubs.png', '6_of_diamonds.png'
+        ];
+
+        var cards = files.slice();
+        var moveOf = '';
+
+        var onStickDisabled = null;
+
+        function resetOnStickDisabled() {
+            onStickDisabled = {
+                'player': 0,
+                'dealer': 0
+            };
+        }
+
+
+        Array.prototype.random = function() {
+            return this[Math.floor((Math.random() * this.length))];
+        }
+
+        Array.prototype.remove = function() {
+            var what, a = arguments,
+                L = a.length,
+                ax;
+            while (L && this.length) {
+                what = a[--L];
+                while ((ax = this.indexOf(what)) !== -1) {
+                    this.splice(ax, 1);
+                }
+            }
+            return this;
+        };
+
+        function removeFaceCards() {
+            // Face cards removed
+            for (i in files) {
+                card = files[i].toString();
+                if (isNaN(card.split(/[_.]/)[0]) == true) {
+                    cards.remove(card);
+                }
+            }
+        }
+
+        function gameOver() {
+            playerSum = parseInt(document.getElementById('player' + "Sum").innerHTML)
+            dealerSum = parseInt(document.getElementById('dealer' + "Sum").innerHTML)
+
+            if (dealerSum > 21) {
+                document.getElementById("gameOverMessage").innerHTML = "You win!!";
+                console.log("You win!!");
+            } else if (playerSum > 21) {
+                document.getElementById("gameOverMessage").innerHTML = "Dealer wins!!"
+                console.log("Dealer wins!!");
+            } else if (playerSum > dealerSum) {
+                document.getElementById("gameOverMessage").innerHTML = "You win!!"
+                console.log("You win!!");
+            } else if (playerSum == dealerSum) {
+                document.getElementById("gameOverMessage").innerHTML = "Draw!!"
+                console.log("Draw!!");
+            } else {
+                document.getElementById("gameOverMessage").innerHTML = "Dealer wins!!"
+                console.log("Dealer wins!!");
+            }
+
+            document.getElementById('start').disabled = true;
+            disable('player');
+            disable('dealer');
+        }
+
+
+        function updateSum(playa, cardNum, cardColor) {
+            console.log(playa, cardNum, parseInt(document.getElementById(playa + "Sum").innerHTML));
+            if (cardColor == 0) {
+                document.getElementById(playa + "Sum").innerHTML = parseInt(document.getElementById(playa + "Sum").innerHTML) - cardNum;
+            } else {
+                document.getElementById(playa + "Sum").innerHTML = (parseInt(document.getElementById(playa + "Sum").innerHTML) + cardNum).toString();
+            }
+
+            if (parseInt(document.getElementById(playa + "Sum").innerHTML) > 21 || parseInt(document.getElementById(playa + "Sum").innerHTML) < 0) {
+                gameOver()
+            }
+
+            // bug did not stick at dealer sum 17
+            if (playa == 'dealer') {
+                if (parseInt(document.getElementById(playa + "Sum").innerHTML) >= 17)
+                    stick(playa)
+            }
+
+        }
+
+        // Coded this way in order to cater to change in rules in the near future
+        function selectCard(startFlag) {
+
+            probOfRedBlack = Math.random();
+            if (startFlag == 1) {
+                probOfRedBlack = 0;
+            }
+            if (probOfRedBlack > 0.75) {
+                // red card
+                while (1) {
+                    card = cards.random();
+                    if (card.split(/[_.]/)[2] == 'hearts' || card.split(/[_.]/)[2] == 'diamonds') {
+                        break;
+                    } else {
+                        continue;
+                    }
+                }
+                return [card, 0]
+            } else {
+                // black card
+                while (1) {
+                    card = cards.random();
+                    if (card.split(/[_.]/)[2] == 'spades' || card.split(/[_.]/)[2] == 'clubs') {
+                        break;
+                    } else {
+                        continue;
+                    }
+                }
+                return [card, 1]
+            }
+        }
+
+        function addCard(playa) {
+
+            // cardToAdd = cards.random();
+            [cardToAdd, cardColor] = selectCard();
+            updateSum(playa, parseInt(cardToAdd.split(/[_]/)[0]), cardColor)
+            // cards.remove(cardToAdd); // So as not to repeat
+
+            tr = document.getElementById(playa + 'Cards');
+            td = tr.insertCell(-1);
+            td.innerHTML = '<img src="../images/main_cards/' + cardToAdd + '" style="height : 150px; width : 100px;"/>';
+        }
+
+
+        function start() {
+            removeFaceCards();
+            resetOnStickDisabled();
+
+            enable('player');
+            // cardToAdd = cards.random();
+            [cardToAdd, cardColor] = selectCard(1);
+            updateSum('dealer', parseInt(cardToAdd.split(/[_]/)[0]), cardColor)
+            // cards.remove(cardToAdd); // So as not to repeat
+
+            tr = document.getElementById('dealerCards');
+            tr.deleteCell(0);
+            td = tr.insertCell(-1);
+            td.innerHTML = '<img src="../images/main_cards/' + cardToAdd + '" style="height : 150px; width : 100px;"/>';
+
+            // cardToAdd = cards.random();
+            [cardToAdd, cardColor] = selectCard(1);
+            updateSum('player', parseInt(cardToAdd.split(/[_]/)[0]), cardColor)
+            // cards.remove(cardToAdd); // So as not to repeat
+
+            tr = document.getElementById('playerCards');
+            tr.deleteCell(0);
+            td = tr.insertCell(-1);
+            td.innerHTML = '<img src="../images/main_cards/' + cardToAdd + '" style="height : 150px; width : 100px;"/>';
+        }
+
+        function reset() {
+            disable('player');
+            disable('dealer');
+            resetOnStickDisabled();
+            document.getElementById('start').disabled = false;
+            document.getElementById("gameOverMessage").innerHTML = "";
+
+            cards = files.slice();
+            removeFaceCards()
+
+            document.getElementById("playerSum").innerHTML = 0;
+
+            tr = document.getElementById('dealerCards');
+            while (tr.cells.length > 0) {
+                tr.deleteCell(-1);
+            }
+            td = tr.insertCell(-1);
+            td.innerHTML = '<img src="../images/other_cards/back_new.jpg" style="height : 150px; width : 100px;"/>';
+
+            document.getElementById("dealerSum").innerHTML = 0;
+
+            tr = document.getElementById('playerCards');
+            while (tr.cells.length > 0) {
+                tr.deleteCell(-1);
+            }
+            td = tr.insertCell(-1);
+            td.innerHTML = '<img src="../images/other_cards/back_new.jpg" style="height : 150px; width : 100px;"/>';
+        }
+
+        function disable(playa) {
+            console.log(playa, " disable");
+            document.getElementById(playa + '_hit').disabled = true;
+            document.getElementById(playa + '_stick').disabled = true;
+        }
+
+        function enable(playa) {
+            if (!onStickDisabled[playa]) {
+                console.log(playa, " enable");
+                document.getElementById(playa + '_hit').disabled = false;
+                document.getElementById(playa + '_stick').disabled = false;
+            } else {
+                playa = playa == 'dealer' ? 'player' : 'dealer';
+                console.log(playa, " enable");
+                document.getElementById(playa + '_hit').disabled = false;
+                document.getElementById(playa + '_stick').disabled = false;
+            }
+        }
+
+        function zubinClicked() {
+            // display $$$$$$
+        }
+
+        function pageLoad() {
+            console.log("document loaded");
+            disable('player');
+            disable('dealer');
+            document.getElementById('start').disabled = false;
+            document.getElementById("gameOverMessage").innerHTML = "";
+        }
+
+        function stick(playa) {
+            onStickDisabled[playa] = 1;
+            for (value in onStickDisabled) {
+                if (onStickDisabled[value] == 0)
+                    return
+            }
+            gameOver()
+        }
+    </script>
+</head>
+
+<body onload="pageLoad()">
+    <button onclick="reset()">Update Estimates</button>
+    <table style="border:2px solid!important">
+        <tr>
+            <td>Dealer Sum</td>
+            <td>Player Sum</td>
+        </tr>
+        <tr>
+            <td style="text-align:center"><span id="dealerSum">0</span></td>
+            <td style="text-align:center"><span id="playerSum">0</span></td>
+        </tr>
+    </table>
+    <table>
+        <tr id="dealerCards">
+            <td><img src="../images/other_cards/back_new.jpg" style="height : 150px; width : 100px;" /></td>
+        </tr>
+        <tr id="playerCards">
+            <td><img src="../images/other_cards/back_new.jpg" style="height : 150px; width : 100px;" /></td>
+        </tr>
+    </table>
+    <table>
+        <tr>
+            <td><img src="../images/yoda.jpg" style="height : 100px; width : 100px;" /></td>
+            <td id="yodaSay"></td>
+            <td id="minionFace"></td>
+            <td><span id="gameOverMessage"></span></td>
+        </tr>
+        <tr>
+
+        </tr>
+    </table>
+
+    <table>
+        <tr>
+            <td><button onclick="reset()">reset</button></td>
+            <td><button id="start" onclick="start()">start</button></td>
+            <td><button id="player_hit" onclick="disable('player');enable('dealer');addCard('player');">player hit</button></td>
+            <td><button id="player_stick" onclick="disable('player');enable('dealer');stick('player');">player stick</button></td>
+            <td><button id="dealer_hit" onclick="disable('dealer');enable('player');addCard('dealer');">dealer hit</button></td>
+            <td><button id="dealer_stick" onclick="disable('dealer');enable('player');stick('dealer');">dealer stick</button></td>
+            <td><button onclick="zubinClicked()">Zubin's move</button></td>
+        </tr>
+    </table>
+
+</body>
+
+</html>
