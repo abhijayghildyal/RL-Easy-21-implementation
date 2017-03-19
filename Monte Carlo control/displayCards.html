@@ -45,6 +45,9 @@
             };
         }
 
+        var firstCardValue = null;
+        var force = null;
+
 
         Array.prototype.random = function() {
             return this[Math.floor((Math.random() * this.length))];
@@ -99,6 +102,14 @@
             disable('dealer');
         }
 
+        function yodaRecommendation(playa, cardNum) {
+            firstCardValue = parseInt(document.getElementById(playa + "Cards").childNodes[2].childNodes[0].src.split('/').reverse()[0].split('_')[0])
+            force = estimates[firstCardValue - 1][cardNum - 1]
+
+            document.getElementById('yodaSay').innerHTML = 'Force if you Hit: ' + (force[1].toFixed(3)).toString() + '<br>Force if you Stick: ' + (force[0].toFixed(3)).toString() + "<br>" + (force[1] > force[0] ? "<span style='color:green;'>Hit you must, young padawan</span>" :
+                "<span style='color:red;'>Stick you must, young padawan</span>")
+        }
+
 
         function updateSum(playa, cardNum, cardColor) {
             console.log(playa, cardNum, parseInt(document.getElementById(playa + "Sum").innerHTML));
@@ -110,6 +121,7 @@
 
             if (parseInt(document.getElementById(playa + "Sum").innerHTML) > 21 || parseInt(document.getElementById(playa + "Sum").innerHTML) < 0) {
                 gameOver()
+                return
             }
 
             // bug did not stick at dealer sum 17
@@ -162,6 +174,9 @@
             tr = document.getElementById(playa + 'Cards');
             td = tr.insertCell(-1);
             td.innerHTML = '<img src="../images/main_cards/' + cardToAdd + '" style="height : 150px; width : 100px;"/>';
+            if (playa == "player") {
+                yodaRecommendation(playa, parseInt(cardToAdd.split(/[_]/)[0]));
+            }
         }
 
 
@@ -189,6 +204,7 @@
             tr.deleteCell(0);
             td = tr.insertCell(-1);
             td.innerHTML = '<img src="../images/main_cards/' + cardToAdd + '" style="height : 150px; width : 100px;"/>';
+            yodaRecommendation('player', parseInt(cardToAdd.split(/[_]/)[0]));
         }
 
         function reset() {
@@ -307,5 +323,7 @@
     </table>
 
 </body>
+
+</html>
 
 </html>
